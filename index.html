@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>PPLI Operations Control</title>
 <meta name="theme-color" content="#032b1a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -171,6 +172,20 @@ h2{font-family:var(--head);font-size:clamp(30px,4vw,44px);line-height:1.06;lette
 .rc b{display:block;font-family:var(--head);font-size:20px;font-weight:600;color:var(--deep);margin-bottom:6px}
 .rc span{color:var(--muted);font-size:15.5px}
 .rc:focus-visible{outline:3px solid var(--green);outline-offset:3px}
+.vlist{display:flex;flex-wrap:wrap;gap:14px;margin-top:18px}
+.vt{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#fff;border-radius:14px;padding:8px 18px 8px 8px;font:inherit;font-weight:500;cursor:pointer;text-align:left;transition:background .2s,border-color .2s}
+.vt:hover{background:rgba(255,255,255,.12)}
+.vt img{width:96px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:#0a3a24}
+.vt[aria-pressed="true"]{border-color:var(--lime);background:rgba(166,211,58,.16)}
+.vt:focus-visible,.vopen:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
+.vopen{display:inline-block;margin-top:14px;color:var(--lime);font-weight:500;text-decoration:none;border-bottom:1px solid rgba(166,211,58,.5)}
+.vopen:hover{border-color:var(--lime)}
+.poster{background-color:#0a3a24}
+.vgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.vmeta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin-top:14px;color:#fff;font-weight:500}
+.vmeta .vopen{margin:0;font-size:15px}
+.vgrid .poster span{font-size:18px}
+@media (max-width:760px){.vgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -259,9 +274,9 @@ h2{font-family:var(--head);font-size:clamp(30px,4vw,44px);line-height:1.06;lette
 
 <section class="s vid" id="video">
   <div class="wrap">
-    <h2>Video profil perusahaan</h2>
-    <p class="sub" style="color:#b9d3c3">Kenali PPLI dan fasilitas pengelolaan limbah terpadunya.</p>
-    <div class="frame" id="frame"></div>
+    <h2>Video</h2>
+    <p class="sub" style="color:#b9d3c3">Klik video untuk memutarnya.</p>
+    <div class="vgrid" id="vgrid"></div>
   </div>
 </section>
 
@@ -445,21 +460,28 @@ render();
 
 /* ===== Video & layanan (bagian Tentang) ===== */
 
-/* ===== Video YouTube: isi ID videonya di sini =====
-   Contoh: link https://www.youtube.com/watch?v=AbC123xyz  ->  YT_ID = 'AbC123xyz'
-   Jika kosong, tampil kartu yang mengarah ke situs resmi PPLI. */
-const YT_ID = '';
-
+/* ===== Video YouTube =====
+   Ubah judul atau tambah video di daftar ini. id = kode setelah v= (atau setelah youtu.be/) */
+const VIDEOS = [
+  { id:'IxVrwa6wpHg', title:'Video 1' },
+  { id:'FG_V9HXf56s', title:'Video 2' }
+];
 const PLAY = '<svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
-const vframe = document.getElementById('frame');
-if (YT_ID) {
-  vframe.innerHTML = `<button class="poster" type="button" aria-label="Putar video"><div class="play">${PLAY}</div><span>Putar video profil PPLI</span><small>Video dimuat dari YouTube</small></button>`;
-  vframe.firstChild.addEventListener('click', () => {
-    vframe.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${YT_ID}?autoplay=1&rel=0" title="Video profil PPLI" allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+/* Pemutar tertanam hanya jalan di alamat https (mis. GitHub Pages). Jika dibuka sebagai file lokal,
+   atau jika ingin selalu membuka YouTube di tab baru, ubah FORCE_LINK menjadi true. */
+const FORCE_LINK = false;
+const CAN_EMBED = !FORCE_LINK && /^https?:$/.test(location.protocol);
+const vgrid = document.getElementById('vgrid');
+vgrid.innerHTML = VIDEOS.map((v,i)=>`<div class="vcard"><div class="frame" data-i="${i}"></div><div class="vmeta"><span>${v.title}</span><a class="vopen" href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">Buka di YouTube</a></div></div>`).join('');
+vgrid.querySelectorAll('.frame').forEach(f=>{
+  const v = VIDEOS[+f.dataset.i];
+  f.innerHTML = `<button class="poster" type="button" aria-label="Putar ${v.title}" style="background-image:linear-gradient(rgba(3,43,26,.3),rgba(3,43,26,.6)),url(https://i.ytimg.com/vi/${v.id}/hqdefault.jpg);background-size:cover;background-position:center"><div class="play">${PLAY}</div></button>`;
+  f.firstChild.addEventListener('click', () => {
+    if (!CAN_EMBED) { window.open('https://www.youtube.com/watch?v=' + v.id, '_blank', 'noopener'); return; }
+    const o = encodeURIComponent(location.origin);
+    f.innerHTML = `<iframe src="https://www.youtube.com/embed/${v.id}?autoplay=1&rel=0&playsinline=1&origin=${o}" title="${v.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
   });
-} else {
-  vframe.innerHTML = `<a class="poster" style="text-decoration:none" href="https://ppli.co.id/en/tentang-kami/perusahaan/" target="_blank" rel="noopener"><div class="play">${PLAY}</div><span>Video profil perusahaan</span><small>Tonton di situs resmi PPLI</small></a>`;
-}
+});
 
 const SVC = [
   ['Profil limbah','profil-limbah'],['Waste to energy','energi-dari-limbah'],['Proses pra-penerimaan','proses-pra-penerimaan'],
